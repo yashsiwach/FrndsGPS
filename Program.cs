@@ -26,11 +26,10 @@ namespace NearbyFriendsApp
 
             app.UseAuthorization();
 
-            app.MapStaticAssets();
+            app.UseStaticFiles();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
-                .WithStaticAssets();
+                pattern: "{controller=Home}/{action=Index}/{id?}");
 
             var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
             app.Run($"http://0.0.0.0:{port}");
