@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using NearbyFriendsApp.Services;
 
 namespace NearbyFriendsApp
@@ -13,20 +14,26 @@ namespace NearbyFriendsApp
             builder.Services.AddSingleton<LocationService>();
             var app = builder.Build();
 
+            // Required for reverse-proxy deployments (Render, Railway, etc.)
+            // so the app correctly reads X-Forwarded-For / X-Forwarded-Proto headers.
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            // HTTPS is terminated at the reverse proxy; do not redirect here.
+            app.UseStaticFiles();
             app.UseRouting();
 
             app.UseAuthorization();
 
-            app.UseStaticFiles();
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
