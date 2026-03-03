@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "Nearby Friends";
+}
+
+<h2>Nearby Friends Finder</h2>
+
+<input type="text" id="name" placeholder="Enter your name" />
+
+<button onclick="shareLocation()">Share My Location</button>
+
+<button onclick="loadLocations()">Show All Friends</button>
+<div id="map" style="height:500px;margin-top:20px;"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map').setView([20, 77], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var markersLayer = L.layerGroup().addTo(map);
+
+    function shareLocation() {
+
+        var name = document.getElementById("name").value;
+
+        if (!name) {
+            alert("Enter your name first");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert("Geolocation not supported");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(function (position) {
+
+            var data = {
+                name: name,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+
+            fetch('/Home/SaveLocation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(() => {
+
+                map.setView([data.latitude, data.longitude], 13);
+
+                loadLocations(); // reload all friends
+            });
+
+        });
+    }
+
+    function loadLocations() {
+
+        markersLayer.clearLayers();
+
+        fetch('/Home/GetLocations')
+            .then(res => res.json())
+            .then(data => {
+
+                data.forEach(user => {
+
+                    L.marker([user.latitude, user.longitude])
+                        .bindPopup(user.name)
+                        .addTo(markersLayer);
+
+                });
+
+            });
+    }
+</script>
